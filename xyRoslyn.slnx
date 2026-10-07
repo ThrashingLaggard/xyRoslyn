@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/xyRoslyn.Analyzers/xyRoslyn.Analyzers.csproj" />
+    <Project Path="src/xyRoslyn.CodeFixes/xyRoslyn.CodeFixes.csproj" />
+    <Project Path="src/xyRoslyn.Package/xyRoslyn.Package.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/xyRoslyn.Analyzers.Tests/xyRoslyn.Analyzers.Tests.csproj" />
+  </Folder>
+</Solution>

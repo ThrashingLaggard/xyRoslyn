@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- Nullable from Directory.Build.props needs C# 8 or later; netstandard2.0 defaults to 7.3 -->
+    <LangVersion>latest</LangVersion>
+    <PackageId>xyRoslyn</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>ThrashingLaggard</Authors>
+    <Description>Roslyn analyzers for the rules of the goldstandard best-practice collection (EF Core, HTTP clients, hosting, MCP, configuration).</Description>
+    <PackageTags>roslyn;analyzers;efcore;best-practices</PackageTags>
+    <RepositoryUrl>https://github.com/ThrashingLaggard/xyRoslyn</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+
+    <!-- No lib/ folder: the package contains only analyzers -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Consumers get it as a development dependency, it does not flow to their consumers -->
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\xyRoslyn.Analyzers\xyRoslyn.Analyzers.csproj" />
+    <ProjectReference Include="..\xyRoslyn.CodeFixes\xyRoslyn.CodeFixes.csproj" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <Target Name="_AddAnalyzersToPackage">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(OutputPath)xyRoslyn.Analyzers.dll" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(OutputPath)xyRoslyn.CodeFixes.dll" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+</Project>

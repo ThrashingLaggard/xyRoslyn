@@ -1,0 +1,4 @@
+# src/.editorconfig: analyzer and code-fix projects
+[*.cs]
+# Every rule has a help page (roslyn-analyzers step 9, ANA-014)
+dotnet_diagnostic.RS1015.severity = error

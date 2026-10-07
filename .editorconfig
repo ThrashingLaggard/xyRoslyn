@@ -1,0 +1,37 @@
+# .editorconfig in the repository root (roslyn-analyzers step 3)
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,xml,csproj,props,targets,slnx}]
+indent_size = 2
+
+[*.cs]
+# Security rules are never just warnings
+dotnet_analyzer_diagnostic.category-Security.severity = error
+
+# forward CancellationToken (web-api API-010)
+dotnet_diagnostic.CA2016.severity = error
+# constant log message templates (web-api API-022)
+dotnet_diagnostic.CA2254.severity = error
+# unawaited Task
+dotnet_diagnostic.CS4014.severity = error
+
+# Unused suppressions are shown; IDE only, this rule never runs on build
+dotnet_diagnostic.IDE0079.severity = warning
+
+# Two style rules that keep diffs small
+# unnecessary using
+dotnet_diagnostic.IDE0005.severity = warning
+# IDE0161
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Deliberately off, with reason
+# ConfigureAwait: analyzers and tests have no synchronization context that needs it
+dotnet_diagnostic.CA2007.severity = none
