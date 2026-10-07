@@ -46,12 +46,12 @@ public sealed class EnvironmentQueryInBusinessCodeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var hostEnvironment = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.IHostEnvironment");
+            INamedTypeSymbol? hostEnvironment = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.IHostEnvironment");
             if (hostEnvironment is null)
                 return;
 
-            var envExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.HostEnvironmentEnvExtensions");
-            var compositionTypes = CompositionTypeNames
+            INamedTypeSymbol? envExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.HostEnvironmentEnvExtensions");
+            ImmutableArray<INamedTypeSymbol> compositionTypes = CompositionTypeNames
                 .Select(start.Compilation.GetTypeByMetadataName)
                 .Where(t => t is not null)
                 .Select(t => t!)

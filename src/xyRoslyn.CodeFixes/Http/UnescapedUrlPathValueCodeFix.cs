@@ -27,15 +27,15 @@ public sealed class UnescapedUrlPathValueCodeFix : CodeFixProvider
 
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not ExpressionSyntax expression
             || expression.Parent is not InterpolationSyntax { AlignmentClause: null, FormatClause: null })
         {
             return;
         }
 
-        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        var typeInfo = model?.GetTypeInfo(expression, context.CancellationToken);
+        SemanticModel? model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        TypeInfo? typeInfo = model?.GetTypeInfo(expression, context.CancellationToken);
         if (typeInfo is not { Type.SpecialType: SpecialType.System_String, Nullability.FlowState: NullableFlowState.NotNull })
             return;
 
@@ -52,29 +52,30 @@ public sealed class UnescapedUrlPathValueCodeFix : CodeFixProvider
     // Chosen here instead of by the simplifier, which also rewrites the spacing inside the hole.
     private static string UriTypeName(SemanticModel model, ExpressionSyntax expression)
     {
-        var uri = model.Compilation.GetTypeByMetadataName("System.Uri");
-        var position = expression.SpanStart;
+        INamedTypeSymbol? uri = model.Compilation.GetTypeByMetadataName("System.Uri");
+        int position = expression.SpanStart;
 
-        var shortName = model.LookupNamespacesAndTypes(position, name: "Uri");
+        ImmutableArray<ISymbol> shortName = model.LookupNamespacesAndTypes(position, name: "Uri");
         if (shortName.Length == 1 && SymbolEqualityComparer.Default.Equals(shortName[0], uri))
             return "Uri";
 
-        var system = model.LookupNamespacesAndTypes(position, name: "System");
+        ImmutableArray<ISymbol> system = model.LookupNamespacesAndTypes(position, name: "System");
         if (system.Length == 1 && system[0] is INamespaceSymbol { ContainingNamespace.IsGlobalNamespace: true })
             return "System.Uri";
 
         return "global::System.Uri";
     }
 
-    private static Document Wrap(
-        Document document, SyntaxNode root, ExpressionSyntax expression, string uriTypeName, CancellationToken cancellationToken)
+    private static Document Wrap(Document document, SyntaxNode root, ExpressionSyntax expression, string uriTypeName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var escaped = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParseExpression(uriTypeName + ".EscapeDataString"),
-                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(expression.WithoutTrivia()))))
-            .WithTriviaFrom(expression);
+        InvocationExpressionSyntax escaped = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.ParseExpression(
+                uriTypeName + ".EscapeDataString"),SyntaxFactory.ArgumentList(
+                SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.Argument(
+                        expression.WithoutTrivia())))).WithTriviaFrom(expression);
 
         return document.WithSyntaxRoot(root.ReplaceNode(expression, escaped));
     }

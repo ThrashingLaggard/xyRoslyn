@@ -40,14 +40,14 @@ public sealed class PagingWithoutOrderByAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var dbSet = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
-            var dbContext = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
-            var queryable = start.Compilation.GetTypeByMetadataName("System.Linq.Queryable");
+            INamedTypeSymbol? dbSet = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
+            INamedTypeSymbol? dbContext = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+            INamedTypeSymbol? queryable = start.Compilation.GetTypeByMetadataName("System.Linq.Queryable");
             if (dbSet is null || dbContext is null || queryable is null)
                 return;
 
-            var efExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
-            var types = new KnownTypes(dbSet, dbContext, queryable, efExtensions);
+            INamedTypeSymbol? efExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
+            KnownTypes types = new KnownTypes(dbSet, dbContext, queryable, efExtensions);
 
             start.RegisterOperationAction(c => AnalyzeInvocation(c, types), OperationKind.Invocation);
         });
@@ -62,10 +62,10 @@ public sealed class PagingWithoutOrderByAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var current = AnalyzerHelpers.WithoutImplicitConversions(invocation.Arguments[0].Value);
+        IOperation current = AnalyzerHelpers.WithoutImplicitConversions(invocation.Arguments[0].Value);
         while (current is IInvocationOperation { Arguments.Length: > 0 } call && types.IsChainMethod(call.TargetMethod.ContainingType))
         {
-            var isQueryable = SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, types.Queryable);
+            bool isQueryable = SymbolEqualityComparer.Default.Equals(call.TargetMethod.ContainingType, types.Queryable);
 
             // Ordered: fine. Another Skip or Take further in: that one reports, so the chain reports once.
             if (isQueryable && (Ordering.Contains(call.TargetMethod.Name) || RowLimits.Contains(call.TargetMethod.Name)))

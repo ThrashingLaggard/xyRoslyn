@@ -6,8 +6,8 @@
     <PackageId>xyRoslyn</PackageId>
     <Version>0.1.0</Version>
     <Authors>ThrashingLaggard</Authors>
-    <Description>Roslyn analyzers for the rules of the goldstandard best-practice collection (EF Core, HTTP clients, hosting, MCP, configuration).</Description>
-    <PackageTags>roslyn;analyzers;efcore;best-practices</PackageTags>
+    <Description>Custom Roslyn analyzers for the rules of my  best-practice collection.</Description>
+    <PackageTags>roslyn;analyzers;efcore;best-practices,xy,ahuhu</PackageTags>
     <RepositoryUrl>https://github.com/ThrashingLaggard/xyRoslyn</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
@@ -19,6 +19,7 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzersToPackage</TargetsForTfmSpecificContentInPackage>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

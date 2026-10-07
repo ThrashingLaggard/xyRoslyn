@@ -1,6 +1,8 @@
 # xyRoslyn
 
-Roslyn analyzers that check rules of the goldstandard best-practice collection at compile time.
+!!!WIP!!!
+
+Custom Roslyn analyzers that check rules at compile time.
 
 ## Install
 
@@ -20,7 +22,7 @@ Roslyn analyzers that check rules of the goldstandard best-practice collection a
 | [ROSA006](docs/analyzers/ROSA006.md) | mcp-server MCP-005 | Set every MCP tool annotation explicitly |
 | [ROSA007](docs/analyzers/ROSA007.md) | configuration CFG-006 | Read configuration values instead of asking for the environment |
 
-Every rule has a help page under `docs/analyzers/`. Severities are set per repository in `.editorconfig`:
+Severities are set per repository in `.editorconfig`:
 
 ```ini
 [*.cs]
@@ -30,3 +32,8 @@ dotnet_diagnostic.ROSA001.severity = error
 ## License
 
 GPL-3.0-or-later. The analyzers run inside the compiler as a development dependency and are not part of the build output of a consuming project.
+
+
+## Author
+
+https://github.com/ThrashingLaggard

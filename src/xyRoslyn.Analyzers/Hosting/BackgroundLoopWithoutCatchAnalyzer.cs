@@ -36,9 +36,9 @@ public sealed class BackgroundLoopWithoutCatchAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var backgroundService = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.BackgroundService");
-            var exception = start.Compilation.GetTypeByMetadataName("System.Exception");
-            var executeAsync = backgroundService?.GetMembers("ExecuteAsync").OfType<IMethodSymbol>().FirstOrDefault();
+            INamedTypeSymbol? backgroundService = start.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Hosting.BackgroundService");
+            INamedTypeSymbol? exception = start.Compilation.GetTypeByMetadataName("System.Exception");
+            IMethodSymbol? executeAsync = backgroundService?.GetMembers("ExecuteAsync").OfType<IMethodSymbol>().FirstOrDefault();
             if (executeAsync is null || exception is null)
                 return;
 
@@ -52,7 +52,7 @@ public sealed class BackgroundLoopWithoutCatchAnalyzer : DiagnosticAnalyzer
             return;
 
         // Only the outermost loop of ExecuteAsync itself; inner loops sit inside its try.
-        for (var parent = loop.Parent; parent is not null; parent = parent.Parent)
+        for (IOperation? parent = loop.Parent; parent is not null; parent = parent.Parent)
         {
             if (parent is ILoopOperation or IAnonymousFunctionOperation or ILocalFunctionOperation)
                 return;
@@ -61,7 +61,7 @@ public sealed class BackgroundLoopWithoutCatchAnalyzer : DiagnosticAnalyzer
         if (HasCatchForException(loop.Body, exception))
             return;
 
-        var keyword = loop.Syntax switch
+        SyntaxToken keyword = loop.Syntax switch
         {
             WhileStatementSyntax s => s.WhileKeyword,
             DoStatementSyntax s => s.DoKeyword,
@@ -69,7 +69,7 @@ public sealed class BackgroundLoopWithoutCatchAnalyzer : DiagnosticAnalyzer
             CommonForEachStatementSyntax s => s.ForEachKeyword,
             _ => default,
         };
-        var location = keyword == default ? loop.Syntax.GetLocation() : keyword.GetLocation();
+        Location location = keyword == default ? loop.Syntax.GetLocation() : keyword.GetLocation();
         context.ReportDiagnostic(Diagnostic.Create(Rule, location, keyword == default ? "loop" : keyword.ValueText));
     }
 
@@ -86,9 +86,9 @@ public sealed class BackgroundLoopWithoutCatchAnalyzer : DiagnosticAnalyzer
 
     private static bool HasCatchForException(IOperation body, INamedTypeSymbol exception)
     {
-        var statements = body is IBlockOperation block ? block.Operations : ImmutableArray.Create(body);
+        ImmutableArray<IOperation> statements = body is IBlockOperation block ? block.Operations : ImmutableArray.Create(body);
 
-        foreach (var statement in statements)
+        foreach (IOperation statement in statements)
         {
             switch (statement)
             {

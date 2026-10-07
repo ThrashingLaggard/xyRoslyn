@@ -41,13 +41,13 @@ public sealed class MaterializedBeforeQueryAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var queryable = start.Compilation.GetTypeByMetadataName("System.Linq.IQueryable");
-            var enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+            INamedTypeSymbol? queryable = start.Compilation.GetTypeByMetadataName("System.Linq.IQueryable");
+            INamedTypeSymbol? enumerable = start.Compilation.GetTypeByMetadataName("System.Linq.Enumerable");
             if (queryable is null || enumerable is null)
                 return;
 
-            var efExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
-            var types = new KnownTypes(queryable, enumerable, efExtensions);
+            INamedTypeSymbol? efExtensions = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
+            KnownTypes types = new KnownTypes(queryable, enumerable, efExtensions);
 
             start.RegisterOperationAction(c => AnalyzeInvocation(c, types), OperationKind.Invocation);
             start.RegisterOperationAction(c => AnalyzeProperty(c, types), OperationKind.PropertyReference);
@@ -63,7 +63,7 @@ public sealed class MaterializedBeforeQueryAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var source = AnalyzerHelpers.WithoutImplicitConversions(invocation.Arguments[0].Value);
+        IOperation source = AnalyzerHelpers.WithoutImplicitConversions(invocation.Arguments[0].Value);
         if (MaterializerName(source, types) is { } materializer)
             context.ReportDiagnostic(Diagnostic.Create(Rule, AnalyzerHelpers.MethodName(invocation), materializer, invocation.TargetMethod.Name));
     }

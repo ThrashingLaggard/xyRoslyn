@@ -34,7 +34,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(start =>
         {
             // Projects without EF Core are skipped entirely.
-            var dbContextType = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+            INamedTypeSymbol? dbContextType = start.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
             if (dbContextType is null)
                 return;
 
@@ -47,7 +47,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         if (context.Operation is not IInvocationOperation invocation)
             return;
 
-        var method = invocation.TargetMethod;
+        IMethodSymbol method = invocation.TargetMethod;
         if (method.Name is not ("SaveChanges" or "SaveChangesAsync"))
             return;
 
@@ -56,7 +56,7 @@ public sealed class SaveChangesInLoopAnalyzer : DiagnosticAnalyzer
         if (!AnalyzerHelpers.InheritsFromOrEquals(method.ContainingType, dbContextType))
             return;
 
-        for (var parent = invocation.Parent; parent is not null; parent = parent.Parent)
+        for (IOperation? parent = invocation.Parent; parent is not null; parent = parent.Parent)
         {
             // When a lambda or local function runs is unknown here, so the search stops at its boundary.
             if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)

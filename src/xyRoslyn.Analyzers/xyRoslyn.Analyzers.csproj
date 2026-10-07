@@ -7,6 +7,11 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <!-- Reports APIs that are not allowed inside analyzers (file system, network, ...) -->
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <Version></Version>
+    <Title></Title>
+    <Authors></Authors>
+    <Description> </Description>
+    <PackageTags>xy, Roslyn, Analyzer, C#</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

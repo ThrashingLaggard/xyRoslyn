@@ -37,12 +37,12 @@ public sealed class UnescapedUrlPathValueAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var httpClient = start.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClient");
-            var uri = start.Compilation.GetTypeByMetadataName("System.Uri");
+            INamedTypeSymbol? httpClient = start.Compilation.GetTypeByMetadataName("System.Net.Http.HttpClient");
+            INamedTypeSymbol? uri = start.Compilation.GetTypeByMetadataName("System.Uri");
             if (httpClient is null || uri is null)
                 return;
 
-            var types = new KnownTypes(
+            KnownTypes types = new KnownTypes(
                 httpClient,
                 start.Compilation.GetTypeByMetadataName("System.Net.Http.Json.HttpClientJsonExtensions"),
                 start.Compilation.GetTypeByMetadataName("System.Net.Http.HttpRequestMessage"),
@@ -64,20 +64,20 @@ public sealed class UnescapedUrlPathValueAnalyzer : DiagnosticAnalyzer
         if (!types.IsRequestTarget(method.ContainingType))
             return;
 
-        foreach (var argument in arguments)
+        foreach (IArgumentOperation argument in arguments)
         {
             if (argument.Parameter?.Name != "requestUri")
                 continue;
 
-            var value = AnalyzerHelpers.WithoutImplicitConversions(argument.Value);
-            var leadingHoleIsBase = true;
+            IOperation value = AnalyzerHelpers.WithoutImplicitConversions(argument.Value);
+            bool leadingHoleIsBase = true;
 
             // HttpClient overloads that take a Uri: look into the string argument of new Uri(...).
             // In new Uri(baseUri, $"...") the string is relative to the base, so its first hole is a path segment.
             if (value is IObjectCreationOperation { Constructor: { } uriConstructor } uriCreation
                 && SymbolEqualityComparer.Default.Equals(uriConstructor.ContainingType, types.Uri))
             {
-                var stringArgument = uriCreation.Arguments.FirstOrDefault(a => a.Parameter?.Type.SpecialType == SpecialType.System_String);
+                IArgumentOperation? stringArgument = uriCreation.Arguments.FirstOrDefault(a => a.Parameter?.Type.SpecialType == SpecialType.System_String);
                 if (stringArgument is null)
                     continue;
 
@@ -93,8 +93,8 @@ public sealed class UnescapedUrlPathValueAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInterpolatedString(
         OperationAnalysisContext context, IInterpolatedStringOperation interpolated, bool leadingHoleIsBase, KnownTypes types)
     {
-        var isFirstPart = leadingHoleIsBase;
-        foreach (var part in interpolated.Parts)
+        bool isFirstPart = leadingHoleIsBase;
+        foreach (IInterpolatedStringContentOperation part in interpolated.Parts)
         {
             if (part is IInterpolatedStringTextOperation text)
             {
@@ -122,7 +122,7 @@ public sealed class UnescapedUrlPathValueAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        var type = expression.Type;
+        ITypeSymbol? type = expression.Type;
         if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable)
             type = nullable.TypeArguments[0];
 

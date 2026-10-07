@@ -28,7 +28,7 @@ public sealed class UnescapedUrlPathValueAnalyzerTests
     // fixedSource == source means the fix must not be offered.
     private static Task VerifyFixAsync(string source, string fixedSource, params DiagnosticResult[] expected)
     {
-        var test = new CSharpCodeFixTest<UnescapedUrlPathValueAnalyzer, UnescapedUrlPathValueCodeFix, DefaultVerifier>
+        CSharpCodeFixTest<UnescapedUrlPathValueAnalyzer, UnescapedUrlPathValueCodeFix, DefaultVerifier> test = new CSharpCodeFixTest<UnescapedUrlPathValueAnalyzer, UnescapedUrlPathValueCodeFix, DefaultVerifier>
         {
             ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
             TestCode = source,
@@ -388,12 +388,12 @@ public sealed class UnescapedUrlPathValueAnalyzerTests
     [InlineData("{{|ROSA002:shipmentId|}:x}")]
     public Task Fix_is_not_offered_with_alignment_or_format(string hole)
     {
-        var source = Usings + $$"""
-            public sealed class ShipmentClient
-            {
-                public void Load(HttpClient http, string shipmentId) => _ = http.GetAsync($"shipments/{{hole}}");
-            }
-            """;
+        string source = Usings + $$"""
+                                   public sealed class ShipmentClient
+                                   {
+                                       public void Load(HttpClient http, string shipmentId) => _ = http.GetAsync($"shipments/{{hole}}");
+                                   }
+                                   """;
         return VerifyFixAsync(source, source);
     }
 

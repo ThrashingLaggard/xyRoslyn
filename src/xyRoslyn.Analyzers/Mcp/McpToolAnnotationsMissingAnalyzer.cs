@@ -35,7 +35,7 @@ public sealed class McpToolAnnotationsMissingAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(start =>
         {
-            var toolAttribute = start.Compilation.GetTypeByMetadataName("ModelContextProtocol.Server.McpServerToolAttribute");
+            INamedTypeSymbol? toolAttribute = start.Compilation.GetTypeByMetadataName("ModelContextProtocol.Server.McpServerToolAttribute");
             if (toolAttribute is null)
                 return;
 
@@ -49,18 +49,18 @@ public sealed class McpToolAnnotationsMissingAnalyzer : DiagnosticAnalyzer
         if (context.Symbol is IMethodSymbol { PartialDefinitionPart: not null })
             return;
 
-        foreach (var attribute in context.Symbol.GetAttributes())
+        foreach (AttributeData attribute in context.Symbol.GetAttributes())
         {
             if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, toolAttribute))
                 continue;
 
-            var missing = Annotations.Where(name => attribute.NamedArguments.All(a => a.Key != name)).ToArray();
+            string[] missing = Annotations.Where(name => attribute.NamedArguments.All(a => a.Key != name)).ToArray();
             if (missing.Length == 0)
                 continue;
 
-            var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation()
-                           ?? context.Symbol.Locations.FirstOrDefault()
-                           ?? Location.None;
+            Location location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation()
+                                ?? context.Symbol.Locations.FirstOrDefault()
+                                ?? Location.None;
             context.ReportDiagnostic(Diagnostic.Create(Rule, location, context.Symbol.Name, string.Join(", ", missing)));
         }
     }
