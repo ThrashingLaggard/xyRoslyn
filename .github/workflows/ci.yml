@@ -1,0 +1,82 @@
+# .github/workflows/ci.yml (build-deployment step 4, roslyn-analyzers steps 12 and 13)
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+# Least privilege for every job; jobs that need more ask for it explicitly.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - run: dotnet restore --locked-mode
+      # TreatWarningsAsErrors from Directory.Build.props: RS meta rules and CA rules break the build
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet format --verify-no-changes --no-restore
+      # Microsoft.Testing.Platform mode (global.json); TRX report built into xUnit v3
+      - run: dotnet test --no-build --configuration Release --report-xunit-trx --results-directory TestResults
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: TestResults
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  package:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, secret-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+      - id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # Tag names may contain shell characters; only plain semantic versions pass (build-deployment step 12)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "invalid tag $GITHUB_REF_NAME" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # Release tracking: every rule of this release has moved to Shipped.md (roslyn-analyzers step 9)
+      - run: |
+          if grep -q '^### ' src/xyRoslyn.Analyzers/AnalyzerReleases.Unshipped.md; then
+            echo "AnalyzerReleases.Unshipped.md still lists rules; move them to Shipped.md before tagging" >&2
+            exit 1
+          fi
+          grep -q "^## Release ${{ steps.version.outputs.version }}$" src/xyRoslyn.Analyzers/AnalyzerReleases.Shipped.md
+      - run: dotnet restore --locked-mode
+      - run: dotnet pack src/xyRoslyn.Package --no-restore --configuration Release -p:Version=${{ steps.version.outputs.version }} -o out
+      # Analyzers only under analyzers/dotnet/cs, no lib/ folder (roslyn-analyzers step 12)
+      - run: |
+          pkg="out/xyRoslyn.${{ steps.version.outputs.version }}.nupkg"
+          content="$(unzip -Z1 "$pkg")"
+          grep -qx 'analyzers/dotnet/cs/xyRoslyn.Analyzers.dll' <<<"$content"
+          grep -qx 'analyzers/dotnet/cs/xyRoslyn.CodeFixes.dll' <<<"$content"
+          ! grep -q '^lib/' <<<"$content"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: xyRoslyn-${{ steps.version.outputs.version }}
+          path: out/*.nupkg
